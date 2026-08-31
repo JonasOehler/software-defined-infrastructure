@@ -1,0 +1,3 @@
+variable "loginUserName" {
+  type = string
+}

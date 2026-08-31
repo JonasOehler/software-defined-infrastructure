@@ -1,0 +1,96 @@
+#cloud-config
+
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+packages:
+  - python3-systemd
+  - fail2ban
+  - plocate
+  - nginx
+
+users:
+  - name: ${devopsUsername}
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILLYCU6JM+vjrI4eww4wQRUJbWUqAL1TIidB4Tj28Dl/ adib@Adib-PC
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILVQnK9CbEcfETuBCS+gIkxTfJNKOZ20lrelMGkbSU3k jonas Öhler@DESKTOP-Q380QPQ
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKY24AeEibQGSMPtstaN4REByLCM3kzjM//apEZ9WyUB goik@hdm-stuttgart.de
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    groups: sudo
+    shell: /bin/bash
+
+ssh_pwauth: false
+disable_root: true
+ssh_deletekeys: true
+
+ssh_keys:
+  ed25519_private: |
+    ${host_ed25519_private}
+  ed25519_public: |
+    ${host_ed25519_public}
+
+write_files:
+  - path: /etc/ssh/sshd_config
+    content: |
+         Port 22
+         Protocol 2
+         HostKey /etc/ssh/ssh_host_rsa_key
+         HostKey /etc/ssh/ssh_host_dsa_key
+         HostKey /etc/ssh/ssh_host_ecdsa_key
+         HostKey /etc/ssh/ssh_host_ed25519_key
+         UsePrivilegeSeparation yes
+         KeyRegenerationInterval 3600
+         ServerKeyBits 1024
+         SyslogFacility AUTH
+         LogLevel INFO
+         LoginGraceTime 120
+         PermitRootLogin no
+         StrictModes yes
+         RSAAuthentication yes
+         PubkeyAuthentication yes
+         PasswordAuthentication no
+         IgnoreRhosts yes
+         RhostsRSAAuthentication no
+         HostbasedAuthentication no
+         PermitEmptyPasswords no
+         ChallengeResponseAuthentication no
+         X11Forwarding yes
+         X11DisplayOffset 10
+         PrintMotd no
+         PrintLastLog yes
+         TCPKeepAlive yes
+         AcceptEnv LANG LC_*
+         Subsystem sftp /usr/lib/openssh/sftp-server
+         UsePAM yes
+         AllowUsers devops
+
+  - path: /etc/fail2ban/jail.conf
+    content: |
+      [sshd]
+      backend=systemd
+      enabled = true
+      port = 22
+      filter = sshd
+      logpath = /var/log/auth.log
+      maxretry = 5
+      bantime = 3600
+      findtime = 600
+
+runcmd:
+  - aptitude update && aptitude -y upgrade
+  - systemctl enable nginx
+  - echo "I'm Nginx @ $(dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com) 
+    created $(date -u)" >> /var/www/html/index.html
+  - systemctl start nginx
+  - systemctl restart sshd
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+  - updatedb
+  - mkdir /mnt/vol01
+  - echo 
+    `/bin/ls /dev/disk/by-id/*${volId}` 
+    /vol01 xfs discard,nofail,defaults 0 0
+    >> /etc/fstab
+  - systemctl daemon-reload
+  - mount -a
+ 

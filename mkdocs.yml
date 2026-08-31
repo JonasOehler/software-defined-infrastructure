@@ -1,0 +1,19 @@
+site_name: Software Defined Infrastructure
+theme:
+  name: material
+
+nav:
+  - Introduction: index.md
+  - Hetzner Cloud: hetzner.md
+  - Terraform: terraform.md
+  - Cloud-init: cloud-init.md
+  - Volumes: volumes.md
+  - DNS: dns.md
+  - Certificates: certificates.md
+
+extra:
+  homepage: https://software-defined-infrastructure-ffbe0e.pages.mi.hdm-stuttgart.de/
+  social:
+    - icon: fontawesome/brands/gitlab
+      link: https://gitlab.mi.hdm-stuttgart.de/jo041/software-defined-infrastructure
+      name: GitLab
